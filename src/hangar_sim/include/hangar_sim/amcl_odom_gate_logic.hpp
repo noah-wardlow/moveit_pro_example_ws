@@ -86,6 +86,14 @@ struct GateParams
   double provisional_tol = 0.3;      // position drift [m] within which successive candidates are the same target
   double provisional_tol_yaw = 0.2;  // yaw drift [rad] within which successive candidates are the same target
   double persist_time = 1.0;         // a provisional target must persist this long [s] to be accepted
+  double spread_accept_max = 3.0;    // spread [m] above which a persisted correction is NEVER accepted
+                                     // (keep above spread_hold; default is 2x it). Persistence distinguishes
+                                     // a real correction from a thrashing ambiguity, but a confident-WRONG
+                                     // lock (e.g. plane scan ambiguity) also persists. A legitimate
+                                     // correction converges so its spread drops below this; a divergence
+                                     // stays wide, so the gate keeps coasting on odom instead of adopting it.
+                                     // Guards POSITIONAL trust only -- heading multimodality is caught by
+                                     // jump_hold_yaw + persistence, not by (positional) spread.
   double alpha_slew = 0.05;          // max change in follow fraction per update (smooth ramp)
 };
 

@@ -73,9 +73,18 @@ Pose2 updateGate(const Pose2& candidate, double spread, double now, const GatePa
     // still eventually resets rather than being accepted after drifting far.
     const bool same_target = s.have_provisional && planarDist(candidate, s.provisional) <= p.provisional_tol &&
                              yawDist(candidate, s.provisional) <= p.provisional_tol_yaw;
-    if (!same_target)
+    // A confident-WRONG lock (e.g. scan ambiguity sliding along a smooth surface) persists
+    // at one pose while its cloud stays SEVERELY spread -- persistence alone cannot tell it
+    // from a real correction. Fold the spread check INTO the persistence requirement rather
+    // than testing it only at the acceptance instant: re-anchoring the clock whenever spread
+    // exceeds spread_accept_max means persist_time must elapse with the cloud continuously
+    // tight. A single-frame spread dip during a wrong lock then cannot ratchet the held pose
+    // toward it (the blend below is stateful and never reverts). Persistence still overrides
+    // MODERATE spread by design (a bad-seed recovery converges below the cap and is accepted).
+    const bool trustworthy = spread <= p.spread_accept_max;
+    if (!same_target || !trustworthy)
     {
-      // New or moving jump target: (re)anchor and restart the persistence clock, hold.
+      // New/moving target, or cloud too spread to trust: (re)anchor and restart the clock, hold.
       s.provisional = candidate;
       s.provisional_since = now;
       s.have_provisional = true;
@@ -83,10 +92,7 @@ Pose2 updateGate(const Pose2& candidate, double spread, double now, const GatePa
     }
     else
     {
-      // Candidate has persisted near the anchor: accept once it has held long enough.
-      // Persistence overrides spread here by design -- a correction that stays put for
-      // persist_time is trustworthy even if the cloud is still wide (e.g. recovering
-      // from a bad initial seed), which the spread trigger alone would keep rejecting.
+      // Candidate has persisted near the anchor with a tight-enough cloud for persist_time.
       follow = (now - s.provisional_since >= p.persist_time);
     }
   }

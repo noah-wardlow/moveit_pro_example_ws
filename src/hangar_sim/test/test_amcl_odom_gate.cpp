@@ -221,6 +221,153 @@ TEST(AmclOdomGate, PersistentCorrectionHeldUntilTimerElapses)
   EXPECT_LT(planarDist(out, Pose2{ 0.0, 0.0, 0.0 }), 0.5);
 }
 
+// Case 1b (confident-WRONG lock): a large candidate that PERSISTS at one pose but with
+// a SEVERELY spread cloud is a divergence (e.g. scan ambiguity sliding along a smooth
+// surface), not a real correction. Persistence alone would accept it; spread_accept_max
+// must reject it so the gate keeps coasting on odom instead of adopting the wrong pose.
+TEST(AmclOdomGate, SevereSpreadPersistentPoseNotAccepted)
+{
+  GateParams p;
+  GateState s;
+  double t = 0.0;
+  run({ 0.0, 0.0, 0.0 }, 0.2, 1, p, s, t);  // established a confident held pose
+
+  // WHEN AMCL sits at the same far pose well past persist_time, but the cloud stays
+  // severely spread (above spread_accept_max) the whole time -- the wrong-lock signature.
+  const Pose2 wrong{ 8.0, 0.0, 0.0 };
+  const double severe_spread = 5.0;  // > spread_accept_max (3.0)
+  Pose2 out{ 0.0, 0.0, 0.0 };
+  for (int i = 0; i < 120; ++i)
+  {
+    out = updateGate(wrong, severe_spread, t, p, s);
+    t += kDt;
+  }
+  // THEN the gate never adopts it -- it stays held near the last good pose (coasting on
+  // odom), NOT snapping to the persistent-but-wrong pose.
+  EXPECT_LT(planarDist(out, Pose2{ 0.0, 0.0, 0.0 }), 0.5);
+}
+
+// Case 1c (right case preserved): a genuine recovery whose cloud starts severely spread
+// then CONVERGES (spread drops below the cap) must still be accepted once it tightens --
+// the cap waits for spread to fall, it does not reject legitimate corrections.
+TEST(AmclOdomGate, RecoveryAcceptedOnceSpreadDrops)
+{
+  GateParams p;
+  GateState s;
+  double t = 0.0;
+  run({ 0.0, 0.0, 0.0 }, 0.2, 1, p, s, t);
+
+  const Pose2 truth{ 8.0, 0.0, 0.0 };
+  Pose2 out{ 0.0, 0.0, 0.0 };
+  // Phase 1: persistent at truth but spread still severe -> held (not yet accepted).
+  for (int i = 0; i < 60; ++i)
+  {
+    out = updateGate(truth, 5.0, t, p, s);  // severe spread > spread_accept_max
+    t += kDt;
+  }
+  EXPECT_LT(planarDist(out, Pose2{ 0.0, 0.0, 0.0 }), 0.5) << "must not accept while spread severe";
+
+  // Phase 2: cloud converges (spread drops below the cap) while the pose stays put.
+  for (int i = 0; i < 120; ++i)
+  {
+    out = updateGate(truth, 0.2, t, p, s);  // spread now tight
+    t += kDt;
+  }
+  // THEN the now-converged correction is accepted and the gate recovers to truth.
+  EXPECT_LT(planarDist(out, truth), 0.3);
+}
+
+// Boundary: pin spread_accept_max. A persisted correction just BELOW the cap is accepted;
+// just ABOVE it is held. Probes threshold +/- a small epsilon so the constant cannot
+// drift without this test failing (per test-design threshold+/-1 rule).
+TEST(AmclOdomGate, SpreadAcceptMaxBoundary)
+{
+  constexpr double kEps = 0.1;
+
+  // GIVEN spread just UNDER spread_accept_max: a persistent correction is accepted.
+  {
+    GateParams p;  // spread_accept_max = 3.0
+    GateState s;
+    double t = 0.0;
+    run({ 0.0, 0.0, 0.0 }, 0.2, 1, p, s, t);
+    const Pose2 truth{ 8.0, 0.0, 0.0 };
+    Pose2 out{ 0.0, 0.0, 0.0 };
+    for (int i = 0; i < 120; ++i)
+    {
+      out = updateGate(truth, p.spread_accept_max - kEps, t, p, s);
+      t += kDt;
+    }
+    EXPECT_LT(planarDist(out, truth), 0.3) << "just below the cap must be accepted";
+  }
+
+  // GIVEN spread just OVER spread_accept_max: the same persistent correction is held.
+  {
+    GateParams p;
+    GateState s;
+    double t = 0.0;
+    run({ 0.0, 0.0, 0.0 }, 0.2, 1, p, s, t);
+    const Pose2 truth{ 8.0, 0.0, 0.0 };
+    Pose2 out{ 0.0, 0.0, 0.0 };
+    for (int i = 0; i < 120; ++i)
+    {
+      out = updateGate(truth, p.spread_accept_max + kEps, t, p, s);
+      t += kDt;
+    }
+    EXPECT_LT(planarDist(out, Pose2{ 0.0, 0.0, 0.0 }), 0.5) << "just above the cap must be held";
+  }
+}
+
+// A persistent-but-wrong pose at severe spread must stay bounded near the last good pose
+// for the FULL divergence window -- the gate never drifts toward it (regression for the
+// organic plane-nose cascade where the gate snapped to a 6.7 m wrong lock after ~20 s).
+TEST(AmclOdomGate, SevereSpreadWrongLockStaysBoundedThroughout)
+{
+  GateParams p;
+  GateState s;
+  double t = 0.0;
+  const Pose2 good{ 0.0, 0.0, 0.0 };
+  run(good, 0.2, 1, p, s, t);
+
+  // WHEN AMCL sits at a far wrong pose with severe spread for a long window (~20 s),
+  // far longer than persist_time.
+  const Pose2 wrong{ 6.7, 0.0, 0.0 };
+  double worst = 0.0;
+  for (int i = 0; i < 600; ++i)  // 600 * 0.033 s ~= 20 s
+  {
+    const Pose2 out = updateGate(wrong, 5.0, t, p, s);
+    worst = std::max(worst, planarDist(out, good));
+    t += kDt;
+  }
+  // THEN the broadcast pose never crept toward the wrong lock at any point in the window.
+  EXPECT_LT(worst, 0.5);
+}
+
+// The spread check is part of the persistence requirement, not an instantaneous gate: a
+// wrong pose that persists while spread NOISILY dips below the cap on alternating frames
+// must never ratchet the held pose toward it (the blend is stateful and never reverts).
+TEST(AmclOdomGate, OscillatingSpreadAcrossCapDoesNotRatchet)
+{
+  GateParams p;
+  GateState s;
+  double t = 0.0;
+  run({ 0.0, 0.0, 0.0 }, 0.2, 1, p, s, t);
+
+  // WHEN AMCL sits at a far wrong pose whose cloud spread flickers ABOVE and BELOW the cap
+  // (severe on even frames, just under on odd) -- so the longest continuously-tight run is a
+  // single frame, never persist_time.
+  const Pose2 wrong{ 8.0, 0.0, 0.0 };
+  double worst = 0.0;
+  for (int i = 0; i < 300; ++i)
+  {
+    const double spread = ((i % 2) == 0) ? 5.0 : 2.0;  // 2.0 < spread_accept_max(3.0) < 5.0
+    const Pose2 out = updateGate(wrong, spread, t, p, s);
+    worst = std::max(worst, planarDist(out, Pose2{ 0.0, 0.0, 0.0 }));
+    t += kDt;
+  }
+  // THEN intermittent sub-cap dips never accumulate persist_time, so the held pose stays put.
+  EXPECT_LT(worst, 0.5);
+}
+
 // Case 4 (spread hysteresis): high spread alone holds even for a small innovation,
 // and it resumes only after spread drops below the lower resume threshold.
 TEST(AmclOdomGate, HighSpreadHoldsAndResumesWithHysteresis)
