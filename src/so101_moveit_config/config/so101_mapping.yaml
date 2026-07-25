@@ -4,7 +4,8 @@ hardware_arm: right
 mapping_id: xlerobot-overhead-v2
 calibration_sha256: 409228de0b511c46e44c5a4e5eeece5da09d6d58329b93889d611f75213c08b9
 source_model:
-  path: /Users/noah/mujoco/so101-robot-ops/camera-dashboard/public/models/so101_overhead_bimanual/so101_overhead_bimanual.xml
+  # Provenance path relative to the maintained so101-robot-ops repository.
+  path: camera-dashboard/public/models/so101_overhead_bimanual/so101_overhead_bimanual.xml
   sha256: a04048ae67fd9ff2c43ed030503828ac876b1fb1a0226e3c7706cc28bc3f949c
 registration:
   # registered_moveit_position = canonical_pi_position + offset

@@ -11,4 +11,3 @@ MUJOCO_LOG.TXT
 **/__pycache__/
 **/*.egg-info/
 artifacts/
-src/topic_based_ros2_control/

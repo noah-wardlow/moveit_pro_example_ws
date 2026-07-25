@@ -76,15 +76,6 @@
           <param name="base_link_name">Base_2</param>
         </hardware>
       </xacro:if>
-      <xacro:if value="${hardware_interface == 'zenoh'}">
-        <hardware>
-          <plugin>topic_based_ros2_control/TopicBasedSystem</plugin>
-          <param name="joint_commands_topic">/so101/joint_commands</param>
-          <param name="joint_states_topic">/so101/joint_states</param>
-          <param name="trigger_joint_command_threshold">0.000001</param>
-        </hardware>
-      </xacro:if>
-
       <xacro:controlled_joint
         name="Rotation_R"
         initial="0.0"
@@ -582,7 +573,7 @@
     <origin xyz="0 -0.08145 0" />
   </joint>
 
-  <xacro:if value="${'$(arg hardware_interface)' == 'zenoh'}">
+  <xacro:if value="${'$(arg hardware_interface)' == 'external'}">
     <!--
       Physical-camera optical frames mirror the MuJoCo camera-site contract.
       The head camera is external and is represented at the calibrated twin
@@ -605,5 +596,7 @@
     </joint>
   </xacro:if>
 
-  <xacro:so101_ros2_control hardware_interface="$(arg hardware_interface)" />
+  <xacro:unless value="${'$(arg hardware_interface)' == 'external'}">
+    <xacro:so101_ros2_control hardware_interface="$(arg hardware_interface)" />
+  </xacro:unless>
 </robot>

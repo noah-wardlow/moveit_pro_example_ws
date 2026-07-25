@@ -10,10 +10,22 @@ services:
   base: {}
 
   # Starts the MoveIt Pro Agent and the Bridge between the Agent and the Web UI.
-  agent_bridge: {}
+  agent_bridge:
+    environment:
+      RMW_IMPLEMENTATION: "${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}"
+      ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-0}"
+      ZENOH_CONFIG_OVERRIDE: "${ZENOH_CONFIG_OVERRIDE:-}"
 
   # Starts the robot drivers.
   drivers:
+    environment:
+      RMW_IMPLEMENTATION: "${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}"
+      ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-0}"
+      SO101_GRIPPER_RTSP_URL: "${SO101_GRIPPER_RTSP_URL:-}"
+      SO101_HEAD_RTSP_URL: "${SO101_HEAD_RTSP_URL:-}"
+      SO101_INFERENCE_URL: "${SO101_INFERENCE_URL:-http://127.0.0.1:8973/infer}"
+      SO101_ROBOT_HOST: "${SO101_ROBOT_HOST:-so101-pi.tail337068.ts.net}"
+      ZENOH_CONFIG_OVERRIDE: "${ZENOH_CONFIG_OVERRIDE:-}"
     volumes:
       # Allow access to host hardware e.g. RealSense cameras
       - /dev:/dev

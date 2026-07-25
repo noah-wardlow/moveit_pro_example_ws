@@ -6,11 +6,9 @@ generally reachable; position-only or orientation-sampled objectives should
 be used when adding Cartesian workflows.
 
 `Execute SO101 VLA Policy` uses MoveIt Pro's native `ExecutePolicy` Behavior
-with the stable overhead and wrist camera topics. It switches only the five arm
-joints to JTAC, leaves the single `Jaw_R` gripper controller active, and restores
-the normal joint trajectory controller after either success or ordinary
-failure. A Behavior Tree cancellation halts immediately, so run `Restore SO101
-Planning Controller` after any cancelled or externally interrupted policy.
+with the stable overhead and wrist camera topics. It sends trajectories through
+the same standard `joint_trajectory_controller` used by waypoint execution;
+the Pi remains the sole controller manager and serial-bus owner.
 
 Bring up a policy in this order:
 
@@ -21,19 +19,11 @@ Bring up a policy in this order:
 4. Only after the trained policy's joint order, units, rate, and calibration
    are verified should its endpoint replace the hold server.
 
-The live hardware configuration remains read-only unless the existing local
-authorization marker, Keychain-staged control key, Pi write window, and lease
-are all present. Starting MoveIt Pro or viewing cameras does not satisfy those
-gates.
-
-For physical named-waypoint motion, use the hardware-only `Move Live SO101 to
-Waypoint` Objective instead of the generic `Teleoperate` waypoint mode. The
-SO-101 Objective defaults to `Ready`, checks the command marker, staged key,
-fresh safety telemetry, Pi write window, fault state, E-stop, and competing
-lease before planning. It then uses the normal
-`joint_trajectory_controller`/`jtc` execution path at 10% velocity and
-acceleration. The generic Objective defaults to the admittance controller and
-cannot distinguish an intentionally read-only adapter from a lagging robot.
+For physical named-waypoint motion, either use the hardware-only `Move Live
+SO101 to Waypoint` Objective or start `Teleoperate` and select a waypoint. Both
+use `/joint_trajectory_controller/follow_joint_trajectory`. The hardware config
+ships a compatibility override for `Request Teleoperation` so released MoveIt
+Pro builds seed the velocity scale and select the standard JTC pipeline.
 
 For no-motion validation, the simulation config alone loads `Move Simulated
 SO101 to Waypoint`. It also defaults to `Ready` and uses the same standard

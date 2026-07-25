@@ -46,9 +46,11 @@ git submodule foreach --recursive git lfs pull
 ## SO-101 VLA workspace
 
 This fork includes a single-follower SO-101 configuration for MuJoCo
-simulation and fail-closed live telemetry, plus stable camera topics, a
-MoveIt Pro `GetActionChunk` policy adapter, Pixi environments, and VLA
-Objectives. See [the SO-101 workspace guide](docs/so101/README.md).
+simulation and a physical arm whose Feetech hardware driver, controller
+manager, and standard ros2_control controllers run on its Raspberry Pi.
+MoveIt Pro connects over `rmw_zenoh_cpp`; the same stable camera topics and VLA
+Objectives are available in simulation and hardware. See
+[the SO-101 workspace guide](docs/so101/README.md).
 
 ## Updating Submodules
 

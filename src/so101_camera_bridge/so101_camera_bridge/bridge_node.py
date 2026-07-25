@@ -96,9 +96,12 @@ class RtspCameraBridge(Node):
 
     def __init__(self) -> None:
         super().__init__("so101_rtsp_camera_bridge")
-        self.declare_parameter("head_url", "rtsp://100.79.11.87:8554/head")
         self.declare_parameter(
-            "gripper_url", "rtsp://100.79.11.87:8554/gripper"
+            "head_url", "rtsp://so101-pi.tail337068.ts.net:8554/head"
+        )
+        self.declare_parameter(
+            "gripper_url",
+            "rtsp://so101-pi.tail337068.ts.net:8554/gripper",
         )
         self.declare_parameter("publish_fps", 15.0)
         self.declare_parameter("vertical_fov_degrees", 74.5)

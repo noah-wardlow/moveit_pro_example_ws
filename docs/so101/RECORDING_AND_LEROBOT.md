@@ -17,16 +17,16 @@ markers, and ROS recording hooks. The SO-101 integration should therefore use:
 | Start/stop/accept/reject an episode | Trainer UI and recording services | `episode_recorder` keyboard controls |
 | Durable raw capture | ROS bag/MCAP produced by Trainer | `episode_recorder` MCAP |
 | Observation state | `/joint_states` | configured joint-state topic |
-| Commanded action | `/so101/joint_commands` | configured command topic |
+| Commanded action | desired/reference fields from `/joint_trajectory_controller/controller_state` | configured command topic |
 | Overhead image | `/so101/cameras/overhead/image_raw` | configured head camera |
 | Wrist image | `/so101/cameras/wrist/image_raw` | configured gripper camera |
 | Task/language metadata | Trainer episode metadata | converter arguments/metadata |
 | LeRobot v3 conversion | offline Pixi `lerobot` environment | `rosbag_to_lerobot` |
 
 Keeping state and action distinct matters. `/joint_states` describes what the
-arm actually did; `/so101/joint_commands` is the supervision target. Treating
-observed state as action hides tracking error and makes physical-policy
-training less faithful.
+arm actually did; the JTC controller-state reference is the supervision target.
+Treating observed state as action hides tracking error and makes
+physical-policy training less faithful.
 
 ## Converter contract
 
@@ -35,8 +35,7 @@ LeRobot episode per accepted recording. It should:
 
 - resample joints and images onto an explicit policy clock;
 - preserve source timestamps and record dropped/stale frames;
-- apply the calibration and joint order from
-  `so101_mapping.yaml`;
+- preserve the ROS joint order and calibration identifier recorded by the Pi;
 - encode both cameras under stable feature names;
 - store the task prompt and robot/config identifiers;
 - fail on missing action samples, non-finite values, or an unknown calibration

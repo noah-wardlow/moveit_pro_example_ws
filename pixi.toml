@@ -16,10 +16,9 @@ requests = ">=2.32,<3"
 [pypi-dependencies]
 so101-camera-bridge = { path = "src/so101_camera_bridge", editable = true }
 so101-vla-adapter = { path = "src/so101_vla_adapter", editable = true }
-so101-zenoh-ros = { path = "src/so101_zenoh_ros", editable = true }
 
 [tasks]
-contract-tests = "pytest -q src/so101_camera_bridge/test && pytest -q src/so101_vla_adapter/test && pytest -q src/so101_zenoh_ros/test"
+contract-tests = "pytest -q src/so101_camera_bridge/test && pytest -q src/so101_vla_adapter/test"
 hold-policy = "hold_policy_server"
 
 [feature.lerobot.dependencies]

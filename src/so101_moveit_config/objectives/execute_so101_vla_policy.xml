@@ -2,20 +2,10 @@
 <root BTCPP_format="4" main_tree_to_execute="Execute SO101 VLA Policy">
   <BehaviorTree
     ID="Execute SO101 VLA Policy"
-    _description="Execute a camera-conditioned policy for the single SO-101 follower, then restore the normal planning controller. Start with the hold-current-state policy before using a trained model."
+    _description="Execute a camera-conditioned policy for the single SO-101 follower through its Pi-managed Joint Trajectory Controller. Start with the hold-current-state policy before using a trained model."
   >
-    <Control ID="Sequence" name="SO101VlaWithControllerRestore">
+    <Control ID="Sequence" name="SO101Vla">
       <Action ID="Script" code="policy_succeeded := 0" />
-      <Action
-        ID="SwitchController"
-        activate_controllers="joint_trajectory_admittance_controller"
-        deactivate_controllers="joint_trajectory_controller;velocity_force_controller;joint_velocity_controller"
-        automatic_deactivation="true"
-        strictness="1"
-        timeout="-1.0"
-        controller_list_action_name="/controller_manager/list_controllers"
-        controller_switch_action_name="/controller_manager/switch_controller"
-      />
       <Control ID="Fallback" name="RunPolicyAndRememberResult">
         <Control ID="Sequence">
           <Action
@@ -28,11 +18,11 @@
             committed_action_steps="{committed_action_steps}"
             num_interpolation_points="100"
             link_padding="0.01"
-            goal_path_tolerance="0.08"
+            goal_path_tolerance="0.15"
             policy_tracking_weight="300.0"
             policy_uses_real_time_chunking="{policy_uses_real_time_chunking}"
             policy_call_timeout="{policy_call_timeout}"
-            controller_action_name="/joint_trajectory_admittance_controller/follow_joint_trajectory"
+            controller_action_name="/joint_trajectory_controller/follow_joint_trajectory"
             image_topics="/so101/cameras/overhead/image_raw;/so101/cameras/wrist/image_raw"
             image_names="overhead;wrist"
             joint_states_topic="/joint_states"
@@ -44,16 +34,6 @@
         </Control>
         <Action ID="AlwaysSuccess" />
       </Control>
-      <Action
-        ID="SwitchController"
-        activate_controllers="joint_trajectory_controller"
-        deactivate_controllers="joint_trajectory_admittance_controller"
-        automatic_deactivation="true"
-        strictness="1"
-        timeout="-1.0"
-        controller_list_action_name="/controller_manager/list_controllers"
-        controller_switch_action_name="/controller_manager/switch_controller"
-      />
       <Decorator
         ID="Precondition"
         if="policy_succeeded == 1"

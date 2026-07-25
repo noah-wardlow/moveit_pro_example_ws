@@ -1,10 +1,10 @@
 hardware:
   simulated: false
-  launch_control_node: true
+  launch_control_node: false
   launch_robot_state_publisher: true
   robot_driver_persist_launch_file:
-    package: "so101_zenoh_ros"
-    path: "launch/bridge.launch.py"
+    package: "so101_moveit_hardware_config"
+    path: "launch/runtime.launch.py"
   robot_description:
     urdf:
       package: "so101_moveit_config"
@@ -13,7 +13,7 @@ hardware:
       package: "so101_moveit_config"
       path: "config/moveit/so101_follower.srdf"
     urdf_params:
-      - hardware_interface: "zenoh"
+      - hardware_interface: "external"
 
 ros_global_params:
   use_sim_time: false
@@ -42,15 +42,12 @@ ros2_control:
   config:
     package: "so101_moveit_config"
     path: "config/control/so101.ros2_control.yaml"
-  controllers_active_at_startup:
+  controllers_active_at_startup: []
+  controllers_inactive_at_startup: []
+  controllers_not_managed:
     - "joint_state_broadcaster"
     - "joint_trajectory_controller"
     - "gripper_controller"
-  controllers_inactive_at_startup:
-    - "joint_trajectory_admittance_controller"
-    - "velocity_force_controller"
-    - "joint_velocity_controller"
-  controllers_not_managed: []
   controller_shared_topics: []
 
 objectives:

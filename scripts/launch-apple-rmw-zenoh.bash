@@ -4,8 +4,17 @@ set -euo pipefail
 export PATH="/opt/homebrew/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
 
 CONTAINER_NAME="${CONTAINER_NAME:-moveit-pro-so101}"
-REMOTE_ROUTER_ENDPOINT="${SO101_ZENOH_REMOTE_ENDPOINT:-}"
+MOVEIT_CONFIG_PACKAGE="${MOVEIT_CONFIG_PACKAGE:-so101_moveit_hardware_config}"
+ROBOT_HOST="${SO101_ROBOT_HOST:-so101-pi.tail337068.ts.net}"
 ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-0}"
+
+if [[ "$MOVEIT_CONFIG_PACKAGE" == "so101_moveit_hardware_config" ]]; then
+  REMOTE_ROUTER_ENDPOINT="${SO101_ZENOH_REMOTE_ENDPOINT:-tcp/${ROBOT_HOST}:7447}"
+else
+  # An explicit endpoint can connect another config to a remote graph, while
+  # simulation defaults to a self-contained local ROS domain.
+  REMOTE_ROUTER_ENDPOINT="${SO101_ZENOH_REMOTE_ENDPOINT-}"
+fi
 
 command -v container >/dev/null || {
   echo "error: Apple container CLI is unavailable" >&2
@@ -47,10 +56,29 @@ if (( ${#target_pids[@]} )); then
 fi
 CLEANUP
 
+# The workspace path and HOME are intentionally expanded in the container.
+# shellcheck disable=SC2016
+container exec \
+  --user "$container_user" \
+  --env "HOME=${container_home}" \
+  "$CONTAINER_NAME" \
+  bash -c '
+    source /opt/ros/jazzy/setup.bash
+    source /opt/overlay_ws/install/setup.bash
+    cd "$HOME/user_ws"
+    colcon build --symlink-install --packages-select \
+      so101_vla_adapter \
+      so101_camera_bridge \
+      so101_moveit_config \
+      so101_moveit_hardware_config
+  '
+
 container exec --detach \
   --user "$container_user" \
   --env "HOME=${container_home}" \
+  --env "MOVEIT_CONFIG_PACKAGE=${MOVEIT_CONFIG_PACKAGE}" \
   --env "ROS_DOMAIN_ID=${ROS_DOMAIN_ID}" \
+  --env "SO101_ROBOT_HOST=${ROBOT_HOST}" \
   --env "SO101_ZENOH_REMOTE_ENDPOINT=${REMOTE_ROUTER_ENDPOINT}" \
   "$CONTAINER_NAME" \
   bash -c "exec bash '${container_home}/user_ws/scripts/start-rmw-zenoh-backend.bash' >'${container_home}/rmw_zenoh_backend.log' 2>&1"
@@ -59,7 +87,7 @@ for _ in $(seq 1 60); do
   if container exec "$CONTAINER_NAME" pgrep -f '/rmw_zenoh_cpp/rmw_zenohd' >/dev/null 2>&1 &&
     curl -kfsS -m 3 https://localhost:3200/health 2>/dev/null |
       grep -q '"status":"ok"'; then
-    echo "MoveIt Pro is running with rmw_zenoh_cpp (ROS domain ${ROS_DOMAIN_ID})."
+    echo "${MOVEIT_CONFIG_PACKAGE} is running with rmw_zenoh_cpp (ROS domain ${ROS_DOMAIN_ID})."
     exit 0
   fi
   sleep 5

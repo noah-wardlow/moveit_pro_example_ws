@@ -18,6 +18,13 @@
   />
   <visual>
     <global offwidth="1280" offheight="720"/>
+    <quality offsamples="4" shadowsize="4096"/>
+    <headlight
+      ambient="0.35 0.35 0.35"
+      diffuse="0.8 0.8 0.8"
+      specular="0.3 0.3 0.3"
+    />
+    <map haze="0.1"/>
   </visual>
 
   <asset>
