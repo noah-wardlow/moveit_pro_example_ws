@@ -35,17 +35,17 @@
       </input_port>
       <input_port
         name="velocity_scale_factor"
-        default="0.25"
+        default="0.50"
         type="double"
       >
-        Fraction of the configured 0.30 rad/s joint velocity limit.
+        Fraction of the configured joint velocity limit.
       </input_port>
       <input_port
         name="acceleration_scale_factor"
-        default="0.25"
+        default="0.50"
         type="double"
       >
-        Fraction of the configured 0.60 rad/s^2 joint acceleration limit.
+        Fraction of the configured joint acceleration limit.
       </input_port>
     </SubTree>
   </TreeNodesModel>

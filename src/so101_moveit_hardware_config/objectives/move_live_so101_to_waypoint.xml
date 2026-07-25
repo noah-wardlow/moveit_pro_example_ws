@@ -35,14 +35,14 @@
       </input_port>
       <input_port
         name="velocity_scale_factor"
-        default="0.50"
+        default="0.75"
         type="double"
       >
         Fraction of the configured joint velocity limit.
       </input_port>
       <input_port
         name="acceleration_scale_factor"
-        default="0.50"
+        default="0.75"
         type="double"
       >
         Fraction of the configured joint acceleration limit.

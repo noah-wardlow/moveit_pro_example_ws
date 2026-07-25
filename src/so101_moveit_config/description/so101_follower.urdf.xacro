@@ -233,7 +233,7 @@
       lower="-2.16"
       upper="2.16"
       effort="3.35"
-      velocity="0.30"
+      velocity="1.20"
     />
     <dynamics damping="0.60" friction="0.052" />
   </joint>
@@ -275,7 +275,7 @@
       lower="-0.24"
       upper="3.56"
       effort="3.35"
-      velocity="0.30"
+      velocity="1.20"
     />
     <dynamics damping="0.60" friction="0.052" />
   </joint>
@@ -317,7 +317,7 @@
       lower="-0.47"
       upper="3.40"
       effort="3.35"
-      velocity="0.30"
+      velocity="1.20"
     />
     <dynamics damping="0.60" friction="0.052" />
   </joint>
@@ -359,7 +359,7 @@
       lower="-1.86"
       upper="1.94"
       effort="3.35"
-      velocity="0.30"
+      velocity="1.20"
     />
     <dynamics damping="0.60" friction="0.052" />
   </joint>
@@ -450,7 +450,7 @@
       lower="-3.15"
       upper="3.15"
       effort="3.35"
-      velocity="0.30"
+      velocity="1.20"
     />
     <dynamics damping="0.60" friction="0.052" />
   </joint>
