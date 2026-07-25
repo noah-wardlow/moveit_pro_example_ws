@@ -22,9 +22,11 @@ canonical_fields:
   Wrist_Roll_R: wrist_roll_rad
   Jaw_R: jaw_travel_m
 registered_limits:
-  Rotation_R: [-1.6158680162694754, 1.6158680162694754]
-  Pitch_R: [-0.21731888570186922, 3.367318885701869]
-  Elbow_R: [-0.21800940941740532, 3.138009409417405]
-  Wrist_Pitch_R: [-1.7317119080013874, 1.731711787879228]
-  Wrist_Roll_R: [-1.5533430342749532, 4.694935687864747]
+  # Padded model/planning bounds from the authoritative bimanual MJCF.
+  # Physical commands are clamped again to the Pi-published canonical limits.
+  Rotation_R: [-2.16, 2.16]
+  Pitch_R: [-0.24, 3.56]
+  Elbow_R: [-0.47, 3.40]
+  Wrist_Pitch_R: [-1.86, 1.94]
+  Wrist_Roll_R: [-3.15, 3.15]
   Jaw_R: [0.0, 0.027]
