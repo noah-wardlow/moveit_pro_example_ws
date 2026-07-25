@@ -1,0 +1,38 @@
+<?xml version="1.0" ?>
+<robot name="so101_follower">
+  <group name="manipulator">
+    <chain base_link="Base_2" tip_link="gripper_tip" />
+  </group>
+  <group name="gripper">
+    <joint name="Jaw_R" />
+  </group>
+  <end_effector
+    name="norma_gripper"
+    parent_link="Norma_Gripper_R"
+    group="gripper"
+  />
+  <group_state name="home" group="manipulator">
+    <joint name="Rotation_R" value="0.0" />
+    <joint name="Pitch_R" value="1.575" />
+    <joint name="Elbow_R" value="1.46" />
+    <joint name="Wrist_Pitch_R" value="0.0" />
+    <joint name="Wrist_Roll_R" value="1.5707963267948966" />
+  </group_state>
+  <group_state name="ready" group="manipulator">
+    <joint name="Rotation_R" value="0.0" />
+    <joint name="Pitch_R" value="1.575" />
+    <joint name="Elbow_R" value="1.46" />
+    <joint name="Wrist_Pitch_R" value="0.0" />
+    <joint name="Wrist_Roll_R" value="1.5707963267948966" />
+  </group_state>
+  <disable_collisions link1="Base_2" link2="Rotation_Pitch_2" reason="Adjacent" />
+  <disable_collisions link1="Rotation_Pitch_2" link2="Upper_Arm_2" reason="Adjacent" />
+  <disable_collisions link1="Upper_Arm_2" link2="Lower_Arm_2" reason="Adjacent" />
+  <disable_collisions link1="Lower_Arm_2" link2="Wrist_Pitch_Roll_2" reason="Adjacent" />
+  <disable_collisions link1="Wrist_Pitch_Roll_2" link2="Norma_Gripper_R" reason="Adjacent" />
+  <disable_collisions link1="Norma_Gripper_R" link2="Norma_Gear_R" reason="Adjacent" />
+  <disable_collisions link1="Norma_Gripper_R" link2="Norma_Jaw_Pos_R" reason="Adjacent" />
+  <disable_collisions link1="Norma_Gripper_R" link2="Norma_Jaw_Neg_R" reason="Adjacent" />
+  <disable_collisions link1="Norma_Jaw_Pos_R" link2="Norma_Jaw_Neg_R" reason="Never" />
+  <disable_collisions link1="Norma_Gripper_R" link2="gripper_tip" reason="Adjacent" />
+</robot>

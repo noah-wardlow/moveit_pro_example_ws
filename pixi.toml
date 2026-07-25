@@ -1,0 +1,52 @@
+[workspace]
+name = "so101-moveit-pro"
+description = "Reproducible SO-101 VLA tooling around MoveIt Pro"
+channels = ["conda-forge"]
+platforms = ["linux-64", "linux-aarch64"]
+version = "0.1.0"
+
+[dependencies]
+python = "3.12.*"
+numpy = ">=2.0,<2.3"
+opencv = ">=4.10,<5"
+packaging = ">=24.2,<26"
+pytest = ">=8,<10"
+requests = ">=2.32,<3"
+
+[pypi-dependencies]
+so101-camera-bridge = { path = "src/so101_camera_bridge", editable = true }
+so101-vla-adapter = { path = "src/so101_vla_adapter", editable = true }
+so101-zenoh-ros = { path = "src/so101_zenoh_ros", editable = true }
+
+[tasks]
+contract-tests = "pytest -q src/so101_camera_bridge/test && pytest -q src/so101_vla_adapter/test && pytest -q src/so101_zenoh_ros/test"
+hold-policy = "hold_policy_server"
+
+[feature.lerobot.dependencies]
+ffmpeg = "*"
+pyyaml = ">=6,<7"
+
+[feature.lerobot.pypi-dependencies]
+grpcio = ">=1.70"
+grpcio-tools = ">=1.70"
+huggingface-hub = ">=0.34"
+lerobot = { version = "==0.5.1", extras = ["smolvla"] }
+msgpack = ">=1.1"
+pyzmq = ">=26"
+
+[feature.lerobot.tasks]
+dataset-viz = "lerobot-dataset-viz"
+hf-whoami = "hf auth whoami"
+lerobot-info = "lerobot-info"
+train = "lerobot-train"
+
+[feature.visualization.pypi-dependencies]
+rerun-sdk = ">=0.31,<0.32"
+
+[feature.visualization.tasks]
+rerun-viewer = "python -m rerun"
+
+[environments]
+default = { solve-group = "base" }
+lerobot = { features = ["lerobot"], solve-group = "lerobot" }
+visualization = { features = ["visualization"], solve-group = "visualization" }

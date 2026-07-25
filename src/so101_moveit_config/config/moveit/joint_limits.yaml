@@ -1,0 +1,49 @@
+joint_limits:
+  Rotation_R:
+    has_position_limits: true
+    min_position: -1.6158680162694754
+    max_position: 1.6158680162694754
+    has_velocity_limits: true
+    max_velocity: 0.30
+    has_acceleration_limits: true
+    max_acceleration: 0.60
+  Pitch_R:
+    has_position_limits: true
+    min_position: -0.21731888570186922
+    max_position: 3.367318885701869
+    has_velocity_limits: true
+    max_velocity: 0.30
+    has_acceleration_limits: true
+    max_acceleration: 0.60
+  Elbow_R:
+    has_position_limits: true
+    min_position: -0.21800940941740532
+    max_position: 3.138009409417405
+    has_velocity_limits: true
+    max_velocity: 0.30
+    has_acceleration_limits: true
+    max_acceleration: 0.60
+  Wrist_Pitch_R:
+    has_position_limits: true
+    min_position: -1.7317119080013874
+    max_position: 1.731711787879228
+    has_velocity_limits: true
+    max_velocity: 0.30
+    has_acceleration_limits: true
+    max_acceleration: 0.60
+  Wrist_Roll_R:
+    has_position_limits: true
+    min_position: -1.5533430342749532
+    max_position: 4.694935687864747
+    has_velocity_limits: true
+    max_velocity: 0.30
+    has_acceleration_limits: true
+    max_acceleration: 0.60
+  Jaw_R:
+    has_position_limits: true
+    min_position: 0.0
+    max_position: 0.027
+    has_velocity_limits: true
+    max_velocity: 0.01
+    has_acceleration_limits: true
+    max_acceleration: 0.02

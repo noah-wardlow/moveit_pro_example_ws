@@ -4,3 +4,11 @@ log/
 .vscode/
 MUJOCO_LOG.TXT
 .ccache/
+.runtime/
+.pixi/
+.pytest_cache/
+**/.pytest_cache/
+**/__pycache__/
+**/*.egg-info/
+artifacts/
+src/topic_based_ros2_control/

@@ -1,0 +1,30 @@
+schema: so101.moveit.mapping.v1
+robot_id: so101_pi_follower
+hardware_arm: right
+mapping_id: xlerobot-overhead-v2
+calibration_sha256: 409228de0b511c46e44c5a4e5eeece5da09d6d58329b93889d611f75213c08b9
+source_model:
+  path: /Users/noah/mujoco/so101-robot-ops/camera-dashboard/public/models/so101_overhead_bimanual/so101_overhead_bimanual.xml
+  sha256: a04048ae67fd9ff2c43ed030503828ac876b1fb1a0226e3c7706cc28bc3f949c
+registration:
+  # registered_moveit_position = canonical_pi_position + offset
+  Rotation_R: 0.0
+  Pitch_R: 0.004203673205103398
+  Elbow_R: -0.1107963267948966
+  Wrist_Pitch_R: -0.00000006006107966527452
+  Wrist_Roll_R: 0.0
+  Jaw_R: 0.0
+canonical_fields:
+  Rotation_R: rotation_rad
+  Pitch_R: pitch_rad
+  Elbow_R: elbow_rad
+  Wrist_Pitch_R: wrist_pitch_rad
+  Wrist_Roll_R: wrist_roll_rad
+  Jaw_R: jaw_travel_m
+registered_limits:
+  Rotation_R: [-1.6158680162694754, 1.6158680162694754]
+  Pitch_R: [-0.21731888570186922, 3.367318885701869]
+  Elbow_R: [-0.21800940941740532, 3.138009409417405]
+  Wrist_Pitch_R: [-1.7317119080013874, 1.731711787879228]
+  Wrist_Roll_R: [-1.5533430342749532, 4.694935687864747]
+  Jaw_R: [0.0, 0.027]

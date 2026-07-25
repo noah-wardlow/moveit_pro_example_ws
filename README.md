@@ -40,6 +40,15 @@ git submodule foreach --recursive git lfs pull
 - `moveit_pro_ur_configs/multi_arm_sim`
 - `moveit_pro_ur_configs/picknik_ur_base_config`
 - `moveit_pro_ur_configs/picknik_ur_site_config`
+- `so101_moveit_config`
+- `so101_moveit_hardware_config`
+
+## SO-101 VLA workspace
+
+This fork includes a single-follower SO-101 configuration for MuJoCo
+simulation and fail-closed live telemetry, plus stable camera topics, a
+MoveIt Pro `GetActionChunk` policy adapter, Pixi environments, and VLA
+Objectives. See [the SO-101 workspace guide](docs/so101/README.md).
 
 ## Updating Submodules
 

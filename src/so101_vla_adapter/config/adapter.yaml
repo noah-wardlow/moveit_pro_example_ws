@@ -1,0 +1,11 @@
+so101_get_action_chunk_adapter:
+  ros__parameters:
+    service_name: /get_action_chunk
+    verify_tls: true
+    expected_joint_names:
+      - Rotation_R
+      - Pitch_R
+      - Elbow_R
+      - Wrist_Pitch_R
+      - Wrist_Roll_R
+      - Jaw_R
