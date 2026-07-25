@@ -24,6 +24,13 @@ and DDS stay in the MoveIt Pro container; no ROS packages are required on the
 Pi. This is the smallest live installation and avoids a second serial-bus
 owner.
 
+The target transport keeps MoveIt Pro on standard ROS 2 while replacing DDS
+with `rmw_zenoh_cpp` and adding a typed Hiros endpoint beside the Pi's existing
+supervisor. See
+[`HIROZ_RMW_ZENOH_ARCHITECTURE.md`](HIROZ_RMW_ZENOH_ARCHITECTURE.md)
+for the validated interoperability result, ROS graph contract, packaging
+caveat, migration gates, and rollback boundary.
+
 ## Build
 
 Inside the MoveIt Pro container:
@@ -65,6 +72,21 @@ CONTAINER_NAME=moveit-pro-so101 ./apple_container/launch.sh
 The workspace bootstrap is required for the physical configuration because it
 installs the pinned Zenoh Python binding and imports
 `topic_based_ros2_control`. It is safe to use for simulation as well.
+
+To run the prepared Apple container with the same ROS-over-Zenoh middleware
+targeted by the Pi migration, use:
+
+```bash
+CONTAINER_NAME=moveit-pro-so101 \
+ROS_DOMAIN_ID=42 \
+./moveit_pro_example_ws/scripts/launch-apple-rmw-zenoh.bash
+```
+
+This starts an isolated local `rmw_zenohd` and makes every MoveIt process use
+`rmw_zenoh_cpp`. `run.sh` still selects simulation or hardware through
+`MOVEIT_CONFIG_PACKAGE`. Leave `SO101_ZENOH_REMOTE_ENDPOINT` empty while using
+the transitional native adapter. After the typed Hiros endpoint is deployed,
+set it to the robot router, for example `tcp/ROBOT_TAILNET_IP:7447`.
 
 For a source frontend, run this from `moveit_pro/src/web/frontend`:
 
@@ -134,6 +156,15 @@ Return immediately to the safe baseline:
 ```bash
 ./scripts/so101-moveit-mode.bash disable
 ```
+
+After enabling a bounded hardware session, run `Move Live SO101 to Waypoint`
+from the MoveIt Pro Objective library. It defaults to the `Ready` waypoint,
+preflights both command gates and the live Pi safety state, and executes through
+the standard joint trajectory controller at conservative velocity and
+acceleration scaling. Do not use the generic `Teleoperate` waypoint mode for
+physical SO-101 waypoint moves; that generic workflow selects the admittance
+controller and reports a misleading path-tolerance failure while the adapter
+is intentionally read-only.
 
 The adapter uses a unique `moveit-pro-*` client ID and the Pi's existing
 exclusive lease, step/rate/following-error limits, command TTL, watchdog,
