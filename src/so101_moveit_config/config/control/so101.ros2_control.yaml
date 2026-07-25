@@ -1,6 +1,9 @@
 controller_manager:
   ros__parameters:
-    update_rate: 100
+    # The physical Zenoh adapter accepts commands at 10 Hz. A 50 Hz controller
+    # loop preserves smooth interpolation without the persistent overruns seen
+    # when the Apple Container tried to hold a 10 ms (100 Hz) deadline.
+    update_rate: 50
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
     joint_trajectory_controller:
@@ -45,26 +48,26 @@ joint_trajectory_controller:
     state_publish_rate: 50.0
     action_monitor_rate: 20.0
     allow_partial_joints_goal: false
-    # The physical follower reports through the Pi/Zenoh bridge. Allow the
-    # low-cost servos one feedback interval of lag without aborting an
-    # otherwise healthy low-speed waypoint trajectory.
+    # Keep this just outside the Pi's 4-degree shoulder following-error
+    # envelope. Live waypoint objectives use conservative trajectory scaling;
+    # an unarmed adapter is rejected before execution instead of widening this.
     constraints:
       stopped_velocity_tolerance: 0.02
       goal_time: 3.0
       Rotation_R:
-        trajectory: 0.12
+        trajectory: 0.08
         goal: 0.06
       Pitch_R:
-        trajectory: 0.12
+        trajectory: 0.08
         goal: 0.06
       Elbow_R:
-        trajectory: 0.12
+        trajectory: 0.08
         goal: 0.06
       Wrist_Pitch_R:
-        trajectory: 0.12
+        trajectory: 0.08
         goal: 0.06
       Wrist_Roll_R:
-        trajectory: 0.12
+        trajectory: 0.08
         goal: 0.06
 
 gripper_controller:
@@ -85,7 +88,7 @@ joint_trajectory_admittance_controller:
     state_publish_rate: 20
     jacobian_damping: 0.02
     gravity_vector: [0.0, 0.0, -9.81]
-    default_path_tolerance: 0.12
+    default_path_tolerance: 0.08
     default_goal_tolerance: 0.06
     default_absolute_force_torque_threshold: [1000.0, 1000.0, 1000.0, 1000.0, 1000.0, 1000.0]
 

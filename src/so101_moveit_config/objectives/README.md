@@ -25,3 +25,17 @@ The live hardware configuration remains read-only unless the existing local
 authorization marker, Keychain-staged control key, Pi write window, and lease
 are all present. Starting MoveIt Pro or viewing cameras does not satisfy those
 gates.
+
+For physical named-waypoint motion, use the hardware-only `Move Live SO101 to
+Waypoint` Objective instead of the generic `Teleoperate` waypoint mode. The
+SO-101 Objective defaults to `Ready`, checks the command marker, staged key,
+fresh safety telemetry, Pi write window, fault state, E-stop, and competing
+lease before planning. It then uses the normal
+`joint_trajectory_controller`/`jtc` execution path at 10% velocity and
+acceleration. The generic Objective defaults to the admittance controller and
+cannot distinguish an intentionally read-only adapter from a lagging robot.
+
+For no-motion validation, the simulation config alone loads `Move Simulated
+SO101 to Waypoint`. It also defaults to `Ready` and uses the same standard
+JTC/JTC execution path, but omits the hardware readiness service because no
+physical command boundary exists in MuJoCo.

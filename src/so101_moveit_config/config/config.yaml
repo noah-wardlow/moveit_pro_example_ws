@@ -76,6 +76,9 @@ objectives:
     so101_objectives:
       package_name: "so101_moveit_config"
       relative_path: "objectives"
+    so101_simulation_objectives:
+      package_name: "so101_moveit_config"
+      relative_path: "simulation_objectives"
   waypoints_file:
     package_name: "so101_moveit_config"
     relative_path: "waypoints/so101_waypoints.yaml"

@@ -15,6 +15,7 @@ from typing import Any, Mapping
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
+from std_srvs.srv import Trigger
 import zenoh
 
 from .protocol import (
@@ -129,6 +130,11 @@ class So101ZenohBridge(Node):
             "/so101/joint_commands",
             self._on_ros_joint_command,
             10,
+        )
+        self._control_ready_service = self.create_service(
+            Trigger,
+            "/so101/hardware_control_ready",
+            self._on_hardware_control_ready,
         )
 
         config = zenoh.Config()
@@ -344,6 +350,48 @@ class So101ZenohBridge(Node):
         if not re.fullmatch(r"[0-9a-f]{64}", key_hex):
             raise ProtocolError("MoveIt control key is not 256-bit lowercase hex")
         return bytes.fromhex(key_hex)
+
+    def _hardware_control_blocker(self) -> str | None:
+        if not hardware_marker_is_valid(
+            self._commands_enabled_file,
+            now_epoch_seconds=time.time(),
+        ):
+            return (
+                "MoveIt hardware mode is not enabled. Run "
+                "'./scripts/so101-moveit-mode.bash enable "
+                "--duration-seconds 180 --confirm ENABLE-SO101-MOVEIT-PRO' "
+                "from the example workspace, then retry."
+            )
+        try:
+            self._load_auth_key()
+        except ProtocolError as exc:
+            return str(exc)
+
+        try:
+            capabilities = self._refresh_capabilities()
+            status = self._query_json(KEYS["status"])
+            self._validate_status(status)
+        except Exception as exc:
+            return f"SO-101 control status could not be refreshed: {exc}"
+
+        with self._lock:
+            self._store_joints(status["joints"])
+            self._latest_safety = dict(status["safety"])
+        return self._motion_preconditions(capabilities)
+
+    def _on_hardware_control_ready(
+        self,
+        _request: Trigger.Request,
+        response: Trigger.Response,
+    ) -> Trigger.Response:
+        blocker = self._hardware_control_blocker()
+        response.success = blocker is None
+        response.message = (
+            "SO-101 hardware control gates and live safety state are ready."
+            if blocker is None
+            else blocker
+        )
+        return response
 
     def _send_command(
         self,
