@@ -145,7 +145,10 @@ class RtspCameraBridge(Node):
             raise ValueError("RTSP timeouts must be greater than zero")
         pinhole_projection(640, 480, self._vertical_fov)
 
-        self._publishers = {
+        # Not `self._publishers`: rclpy's Node keeps its own list of publishers
+        # under that name, and shadowing it with a dict makes destroy_node()
+        # index a dict by integer and raise KeyError while tearing the node down.
+        self._camera_publishers = {
             spec.name: (
                 self.create_publisher(Image, spec.image_topic, 2),
                 self.create_publisher(CameraInfo, spec.camera_info_topic, 2),
@@ -200,7 +203,7 @@ class RtspCameraBridge(Node):
             camera_info.r = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
             camera_info.p = p
 
-            image_publisher, info_publisher = self._publishers[worker.spec.name]
+            image_publisher, info_publisher = self._camera_publishers[worker.spec.name]
             image_publisher.publish(image)
             info_publisher.publish(camera_info)
             self._last_sequences[worker.spec.name] = sequence
@@ -216,9 +219,15 @@ def main(args: list[str] | None = None) -> None:
     node = RtspCameraBridge()
     try:
         rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        # Guarded: a signal that interrupts spin can leave the context already
+        # shut down, and calling it again raises over the top of whatever
+        # actually stopped the node.
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":
