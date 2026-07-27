@@ -60,3 +60,31 @@ def test_pinhole_projection_is_centered_and_finite() -> None:
 def test_invalid_projection(width: int, height: int, fov: float) -> None:
     with pytest.raises(ValueError):
         pinhole_projection(width, height, fov)
+
+
+def test_stream_worker_start_and_stop_are_idempotent() -> None:
+    """The demand check calls these on every publish tick, so repeated calls
+    must not spawn a second decoder or fail on an already-stopped worker."""
+    from so101_camera_bridge.bridge_node import StreamWorker
+
+    worker = StreamWorker(
+        StreamSpec(
+            name="probe",
+            url="rtsp://127.0.0.1:1/none",
+            image_topic="/probe/image_raw",
+            camera_info_topic="/probe/camera_info",
+            frame_id="probe_frame",
+        ),
+        reconnect_delay=0.1,
+        open_timeout_ms=100,
+        read_timeout_ms=100,
+        log=lambda _message: None,
+    )
+    assert not worker.running
+    worker.stop()  # stopping a worker that never ran is a no-op
+    worker.start()
+    assert worker.running
+    worker.start()  # must not spawn a second decoder
+    assert worker.running
+    worker.stop()
+    assert not worker.running
