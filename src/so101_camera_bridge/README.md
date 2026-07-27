@@ -26,9 +26,41 @@ relays the Pi's stream straight to the browser (`MOVEIT_WEBRTC_PASSTHROUGH`), so
 decoding every frame to raw and republishing it produced images that nothing read
 — measured at 198 MB and 34 threads for two cameras. Recording, perception
 Behaviors, and anything else that genuinely wants the pixels still get them by
-subscribing; the decoder starts within one publish tick.
+subscribing.
 
-`image_width` and `image_height` (default 640x480) describe the stream so
-`CameraInfo` does not need a decoded frame. If the stream turns out to be a
-different size, the node warns once per camera rather than silently handing out
-intrinsics for the wrong image.
+### Cold-start budget
+
+Subscribing does not produce a frame immediately. Measured against
+`rtsp://so101-pi.tail337068.ts.net:8554/head`:
+
+| Step | Measured |
+| --- | --- |
+| Subscriber matched, `get_subscription_count()` goes non-zero | ~0.14 s |
+| Demand check notices (one publish tick at `publish_fps: 15.0`) | ≤0.07 s |
+| RTSP connect and first decoded frame | 1.4–2.0 s |
+
+So roughly 1.6–2.2 s from subscribe to first image, against `ExecutePolicy`'s
+5 s first-frame timeout. Anything that needs a frame sooner — or that cannot
+tolerate the first attempt failing and retrying after `reconnect_delay_seconds`
+— should keep a subscriber attached rather than subscribing on demand.
+
+### Not stopping on the first idle tick
+
+`decoder_linger_seconds` (default 5.0) is how long the image topic must stay
+unsubscribed before the decoder is torn down. A subscriber that flips away and
+back — switching camera panes, one Behavior handing off to the next — reads as
+zero subscribers for a fraction of a second; measured pane flipping produced 7
+such gaps in 3.2 s. Without the hold-off each gap costs a full RTSP teardown and
+a 1.4–2.0 s reconnect on the upstream camera. Set it to 0.0 to stop on the first
+idle tick.
+
+### CameraInfo geometry
+
+`image_width` and `image_height` (default 640x480, which matches the Pi's
+streams today) describe the camera before anything has been decoded, so
+`CameraInfo` does not need a frame. Once the decoder sees a real frame,
+`CameraInfo` follows the decoded size instead and the node warns once per
+camera: intrinsics that describe a different image than the one published
+alongside them silently corrupt every consumer that projects pixels to poses.
+Set the parameters to match the stream so the info topic is right during the
+window before the first frame.
