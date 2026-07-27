@@ -8,6 +8,7 @@ from typing import Any, Callable
 
 import cv2
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from sensor_msgs.msg import CameraInfo, Image
 
@@ -219,13 +220,17 @@ def main(args: list[str] | None = None) -> None:
     node = RtspCameraBridge()
     try:
         rclpy.spin(node)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, ExternalShutdownException):
+        # rclpy installs its own SIGINT and SIGTERM handlers, and they shut the
+        # context down before the interpreter can raise KeyboardInterrupt. spin
+        # therefore reports the stop as ExternalShutdownException on both
+        # signals; KeyboardInterrupt only surfaces if those handlers are
+        # disabled. Neither is a failure, so neither should exit nonzero.
         pass
     finally:
         node.destroy_node()
-        # Guarded: a signal that interrupts spin can leave the context already
-        # shut down, and calling it again raises over the top of whatever
-        # actually stopped the node.
+        # Guarded: the signal handler already shut the context down, and calling
+        # shutdown a second time raises over the top of whatever stopped us.
         if rclpy.ok():
             rclpy.shutdown()
 
