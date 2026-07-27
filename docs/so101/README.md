@@ -45,6 +45,13 @@ velocity_force_controller     inactive
 joint_velocity_controller     inactive
 ```
 
+Controller deactivation releases its command interfaces; it does not guarantee
+a position hold. Every incoming position controller must therefore inherit the
+last finite command reference when the interface preserves one, fall back to
+the measured position only when necessary, and reset velocity and acceleration
+references to zero. Treat this as a required controller/driver handoff
+invariant, not a gain or tolerance adjustment.
+
 The default hostname is the Pi's Tailscale MagicDNS name,
 `so101-pi.tail337068.ts.net`, so the same checkout works from macOS and Linux
 on the tailnet. Set `SO101_ROBOT_HOST` or `SO101_ROS2DDS_ENDPOINT` when using
@@ -134,14 +141,19 @@ hardware E-stop accessible and maintain a clear workspace during live checks.
 3. Select the waypoint panel and click **Ready**.
 4. Confirm the Objective reports success and the Pi continues holding the
    endpoint through its local controller.
-5. Select **Pose**, use `Base (Base_2)` as the control frame, and briefly jog
+5. Select **IMarker** and confirm its reported frame and ghost resolve through
+   the gripper group's root-joint parent to the physical tool assembly. The
+   manipulator tip and computed tool tip must both be `gripper_tip`.
+6. Select **Pose**, use `Base (Base_2)` as the control frame, and briefly jog
    each translation direction.
 
 `Ready` is a collision-checked bent-arm pose with room for Cartesian jogging.
 Position-only Pose Jog is intentional because this arm has five actuated arm
 joints. A boundary warning from a genuinely long jog is valid; a warning on a
 short base-frame jog indicates that the Pose Jog safety predictor and
-controller are not evaluating the same control frame.
+controller are not evaluating the same control frame. VFC re-expresses a jog
+using only the selected robot-model frame's orientation; frame translation is
+intentionally ignored.
 
 ## VLA and dataset tooling
 

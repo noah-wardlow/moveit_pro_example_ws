@@ -103,3 +103,11 @@ The corresponding pre-motion acceptance check is:
 4. Teleoperate can switch JTC to VFC and back without losing joint state.
 5. `Ready` completes, then short position-only base-frame Pose Jog commands
    move in all requested translation directions.
+6. The manipulator tip, end-effector group, and IMarker frame resolve to the
+   physical tool assembly; VFC and Pose Jog prediction interpret the selected
+   robot-model control frame by the same orientation.
+
+Deactivation is only a release of command interfaces, not a hold command.
+Each incoming position controller must preserve the outgoing finite position
+reference when available, use measured position as the fallback, and zero its
+velocity and acceleration references before commanding hardware.
