@@ -94,10 +94,10 @@ velocity_force_controller:
     planning_group_name: manipulator
     ee_frame: gripper_tip
     sensor_frame: gripper_tip
-    max_joint_velocity: [0.30, 0.30, 0.30, 0.30, 0.30]
-    max_joint_acceleration: [0.60, 0.60, 0.60, 0.60, 0.60]
-    max_cartesian_velocity: [0.08, 0.08, 0.08, 0.30, 0.30, 0.30]
-    max_cartesian_acceleration: [0.20, 0.20, 0.20, 0.60, 0.60, 0.60]
+    max_joint_velocity: [1.00, 1.00, 1.00, 1.00, 1.00]
+    max_joint_acceleration: [2.00, 2.00, 2.00, 2.00, 2.00]
+    max_cartesian_velocity: [0.15, 0.15, 0.15, 1.00, 1.00, 1.00]
+    max_cartesian_acceleration: [2.00, 2.00, 2.00, 4.00, 4.00, 4.00]
     state_publish_rate: 10
     jacobian_damping: 0.02
     command_timeout: 0.2
@@ -107,8 +107,8 @@ velocity_force_controller:
 joint_velocity_controller:
   ros__parameters:
     planning_group_name: manipulator
-    max_joint_velocity: [0.30, 0.30, 0.30, 0.30, 0.30]
-    max_joint_acceleration: [0.60, 0.60, 0.60, 0.60, 0.60]
+    max_joint_velocity: [1.00, 1.00, 1.00, 1.00, 1.00]
+    max_joint_acceleration: [2.00, 2.00, 2.00, 2.00, 2.00]
     command_interfaces: ["position"]
     joint_limit_position_tolerance: 0.02
     command_timeout: 0.2

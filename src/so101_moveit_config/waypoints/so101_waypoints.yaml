@@ -37,7 +37,7 @@
     twist: []
     wrench: []
 - name: Ready
-  description: Centered joint-space planning pose.
+  description: Bent-arm center pose with Cartesian jogging clearance.
   favorite: true
   joint_group_names:
     - manipulator
@@ -57,8 +57,8 @@
       - Jaw_R
     position:
       - 0.0
-      - 1.575
-      - 1.46
+      - 2.0
+      - 2.0
       - 0.0
       - 1.5707963267948966
       - 0.027

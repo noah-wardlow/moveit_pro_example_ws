@@ -6,10 +6,10 @@ hardware. The hardware path follows the same boundary as the working
 
 - the Raspberry Pi owns the Feetech serial bus;
 - `controller_manager`, the Feetech ros2_control hardware interface,
-  `joint_trajectory_controller`, `gripper_controller`, and
-  `joint_state_broadcaster` run on the Pi;
-- MoveIt Pro uses the standard ROS actions, services, and topics over
-  `rmw_zenoh_cpp`;
+  MoveIt Pro's Cartesian/joint jog controllers, trajectory/gripper
+  controllers, and joint-state broadcaster run on the Pi;
+- MoveIt Pro uses standard ROS 2 actions, services, and topics through a
+  directionally filtered `zenoh-bridge-ros2dds` link;
 - the camera bridge reads the Pi's existing RTSP streams without opening the
   camera devices;
 - there is no browser lease, command watchdog, native JSON motion bridge, or
@@ -24,7 +24,7 @@ runtime boundary.
 | --- | --- |
 | `so101_moveit_config` | URDF/Xacro, MuJoCo scene, SRDF, planning limits, waypoints, simulation, and VLA Objectives |
 | `so101_moveit_hardware_config` | Physical config that consumes the controllers already running on the Pi |
-| `so101_camera_bridge` | Read-only RTSP to ROS `Image`/`CameraInfo` bridge |
+| `so101_camera_bridge` | Read-only RTSP to ROS `Image`/`CameraInfo` bridge; MoveIt Pro's generic video service presents those topics to the UI over WebRTC |
 | `so101_vla_adapter` | Validated `GetActionChunk` adapter for an HTTP policy server |
 
 Pixi owns only the fast-moving Python/ML tools. ROS Jazzy and MoveIt Pro remain
@@ -32,21 +32,25 @@ in the MoveIt Pro Linux environment.
 
 ## Robot prerequisite
 
-The Pi must expose its ROS graph through an `rmw_zenohd` router on port 7447 and
-run `so101-ros2-control.service`. The expected active controllers are:
+The Pi must run `so101-ros2-control.service` and
+`so101-ros2dds-bridge.service`. The latter exposes the standard ROS 2 contract
+at `tcp/<robot>:7448`; port 7447 remains separate legacy dashboard transport.
+The expected controller states before Teleoperate starts are:
 
 ```text
-joint_state_broadcaster
-joint_trajectory_controller
-gripper_controller
+joint_state_broadcaster       active
+joint_trajectory_controller   active
+gripper_controller            active
+velocity_force_controller     inactive
+joint_velocity_controller     inactive
 ```
 
 The default hostname is the Pi's Tailscale MagicDNS name,
 `so101-pi.tail337068.ts.net`, so the same checkout works from macOS and Linux
-on the tailnet. Set `SO101_ROBOT_HOST` or the individual endpoint variables
-when using another network.
+on the tailnet. Set `SO101_ROBOT_HOST` or `SO101_ROS2DDS_ENDPOINT` when using
+another network.
 
-## Linux
+## Ubuntu/Linux
 
 Install MoveIt Pro and Git LFS, then clone this fork and check out the SO-101
 branch:
@@ -65,53 +69,43 @@ From the workspace root, launch the physical config:
 ./scripts/run-linux-hardware.bash
 ```
 
-The wrapper exports a Zenoh client configuration and then delegates to the
-normal command:
+The wrapper downloads the pinned standalone ROS2DDS bridge for `x86_64` or
+`aarch64`, verifies its SHA-256, binds its DDS side to loopback, and delegates
+to the normal command:
 
 ```text
 moveit_pro run -c so101_moveit_hardware_config
 ```
 
-If MagicDNS is unavailable inside Docker, use the Pi's tailnet address:
+If MagicDNS is unavailable, use the Pi's tailnet address:
 
 ```bash
 SO101_ROBOT_HOST=100.x.y.z ./scripts/run-linux-hardware.bash
 ```
 
-Advanced endpoint overrides are also supported:
+Endpoint and camera overrides are also supported:
 
 ```bash
-SO101_ZENOH_REMOTE_ENDPOINT=tcp/100.x.y.z:7447 \
+SO101_ROS2DDS_ENDPOINT=tcp/100.x.y.z:7448 \
 SO101_HEAD_RTSP_URL=rtsp://100.x.y.z:8554/head \
 SO101_GRIPPER_RTSP_URL=rtsp://100.x.y.z:8554/gripper \
 ./scripts/run-linux-hardware.bash
 ```
 
-## macOS with Apple Container
+The bridge is stopped when `moveit_pro run` exits. Its log is retained under
+`${XDG_STATE_HOME:-$HOME/.local/state}/so101-moveit-pro/`.
 
-Prepare the workspace with the MoveIt Pro Apple Container workflow, selecting
-`so101_moveit_hardware_config`. Then launch:
+## Runtime portability
 
-```bash
-CONTAINER_NAME=moveit-pro-so101 \
-./scripts/launch-apple-rmw-zenoh.bash
-```
-
-The Apple launcher builds the four SO-101 packages, starts a local
-`rmw_zenohd`, connects it to the Pi router, and starts MoveIt Pro. It does not
-patch the installed MoveIt Pro image or stage a control key.
-
-The same launcher can start an isolated simulation without a Pi connection:
-
-```bash
-MOVEIT_CONFIG_PACKAGE=so101_moveit_config \
-ROS_DOMAIN_ID=1 \
-./scripts/launch-apple-rmw-zenoh.bash
-```
+The robot-facing contract is independent of the operator container runtime:
+local CycloneDDS, one ROS2DDS client, and the stable Pi endpoint. Host-specific
+wrappers must preserve that contract and gate hardware readiness on a typed
+`/controller_manager/list_controllers` response. No workstation address or
+control credential belongs in the workspace.
 
 ## Simulation
 
-Simulation does not require the Pi or Zenoh wrapper:
+Simulation does not require the Pi or ROS2DDS wrapper:
 
 ```bash
 moveit_pro run -c so101_moveit_config
@@ -125,17 +119,29 @@ The MuJoCo and physical configurations publish the same camera topics:
 The planning group, joint names, waypoints, controller action names, and VLA
 Objective are also shared.
 
+With a MoveIt Pro build containing the generic WebRTC camera transport, both
+topics appear as low-latency video panes. The SO-101 package remains a normal
+ROS image publisher and contains no UI-specific streaming code.
+
 ## First hardware check
+
+MoveIt Pro's UI **Stop** requests a cooperative software stop. It is not a
+safety-rated emergency stop. Keep physical power isolation or the robot's
+hardware E-stop accessible and maintain a clear workspace during live checks.
 
 1. Open **Objectives** and run **Teleoperate**.
 2. Confirm both cameras and live joint state are visible.
 3. Select the waypoint panel and click **Ready**.
 4. Confirm the Objective reports success and the Pi continues holding the
    endpoint through its local controller.
+5. Select **Pose**, use `Base (Base_2)` as the control frame, and briefly jog
+   each translation direction.
 
-The attached arm has a known lower-authority elbow. Its shared planning limit is
-intentionally lower than the other joints; do not raise gains or limits merely
-to make the visualization move faster.
+`Ready` is a collision-checked bent-arm pose with room for Cartesian jogging.
+Position-only Pose Jog is intentional because this arm has five actuated arm
+joints. A boundary warning from a genuinely long jog is valid; a warning on a
+short base-frame jog indicates that the Pose Jog safety predictor and
+controller are not evaluating the same control frame.
 
 ## VLA and dataset tooling
 
@@ -159,3 +165,9 @@ conversion boundary.
 released core Objective so waypoint mode always initializes
 `velocity_scale_factor` and uses the standard JTC action. It can be removed
 after the corresponding generic MoveIt Pro fix is included in the base release.
+
+The current MoveIt Pro source also carries generic support for position-only
+Pose Jog and command-frame-aware safety prediction. Neither change contains
+SO-101 names or dimensions. See
+[MoveIt Pro onboarding gaps](MOVEIT_PRO_ONBOARDING_GAPS.md) for the reusable
+lessons from this integration.

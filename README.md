@@ -48,8 +48,9 @@ git submodule foreach --recursive git lfs pull
 This fork includes a single-follower SO-101 configuration for MuJoCo
 simulation and a physical arm whose Feetech hardware driver, controller
 manager, and standard ros2_control controllers run on its Raspberry Pi.
-MoveIt Pro connects over `rmw_zenoh_cpp`; the same stable camera topics and VLA
-Objectives are available in simulation and hardware. See
+MoveIt Pro connects through a directionally filtered ROS2DDS bridge; the same
+stable camera topics and VLA Objectives are available in simulation and
+hardware. See
 [the SO-101 workspace guide](docs/so101/README.md).
 
 ## Updating Submodules
