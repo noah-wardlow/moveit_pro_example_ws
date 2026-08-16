@@ -228,7 +228,8 @@ if [[ "$MODE" == "hardware" ]]; then
   # `moveit_pro shell` uses an ephemeral Runtime container when the stack is
   # not running. The transient-local activity message gives this preflight the
   # current typed controller contract without racing a WAN service proxy.
-  controller_response="$(
+  controller_probe_log="${STATE_DIR}/controller-preflight.log"
+  if ! controller_response="$(
     moveit_pro shell -s runtime -- bash -lc '
       source /opt/ros/jazzy/setup.bash
       source /opt/overlay_ws/install/setup.bash
@@ -238,8 +239,12 @@ if [[ "$MODE" == "hardware" ]]; then
         --qos-durability transient_local \
         /controller_manager/activity \
         controller_manager_msgs/msg/ControllerManagerActivity
-    ' 2>/dev/null || true
-  )"
+    ' 2>"$controller_probe_log"
+  )"; then
+    echo "error: failed to query the Pi ros2_control contract" >&2
+    echo "Inspect ${controller_probe_log} and ${bridge_log}." >&2
+    exit 1
+  fi
 
   if ! controller_is_active "$controller_response" "joint_state_broadcaster" ||
     ! controller_is_active "$controller_response" "joint_trajectory_controller" ||
